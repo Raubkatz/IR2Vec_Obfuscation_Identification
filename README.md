@@ -15,7 +15,7 @@ This repository contains code and data for classifying obfuscation techniques ap
 ## Repository Structure
 ```
 
-📂 Classification_LLVM_IR_Obfuscation
+📂 IR2Vec_Obfuscation_Identification
 ├── DATA/                    # Folder containing dataset files
 │   ├── program_vectors_done_cleaned_06032025.csv # needs to be extracted from the zip files
 │   ├── data_stats.txt        # Human-readable dataset statistics, will be created by running the code
