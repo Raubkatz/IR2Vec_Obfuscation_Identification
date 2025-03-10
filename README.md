@@ -17,9 +17,7 @@ This repository contains code and data for classifying obfuscation techniques ap
 
 📂 IR2Vec_Obfuscation_Identification
 ├── DATA/                    # Folder containing dataset files
-│   ├── program_vectors_done_cleaned_06032025.csv # needs to be extracted from the zip files
-│   ├── data_stats.txt        # Human-readable dataset statistics, will be created by running the code
-│   └── data_stats_latex.txt  # LaTeX-formatted dataset statistics, will be created by running the code
+│   └──  program_vectors_done_cleaned_06032025.csv # needs to be extracted from the zip files
 │
 ├── Results_CatBoost_Classifier/ # Will be created by running the code
 │   ├── models/               # Saved CatBoost models and scalers
