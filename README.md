@@ -1,120 +1,160 @@
-# Classification of Obfuscation Techniques in LLVM IR: A CatBoost-Based Approach
-
+# Classification of Obfuscation Techniques in LLVM IR: A Cascaded and Combined Evaluation Framework
 
 ## Overview
-This repository contains code and data for classifying obfuscation techniques applied at the LLVM Intermediate Representation (IR) level. The approach combines IR2Vec embeddings with machine learning classifiers, including CatBoost and ExtraTrees, to distinguish between various obfuscation transformations. The study focuses on identifying obfuscation patterns in LLVM IR generated from Tigress-obfuscated C programs.
+This repository provides a complete experimental pipeline for classifying obfuscation techniques applied at the LLVM Intermediate Representation (IR) level.  
+The workflow extends the original IR2Vec-based classification approach by introducing **cascaded experiments** (Exp0–Exp5) and **final combined evaluations** using both **CatBoost** and **ExtraTrees** classifiers.
 
+The cascaded structure progressively learns to:
+1. Detect obfuscated vs non-obfuscated code (binary classification).
+2. Differentiate between single and layered obfuscations.
+3. Classify specific single obfuscation methods.
+4. Identify layered combinations.
+5. Optionally detect O-level or non-obfuscated states.
+
+The **combined evaluation scripts** merge the predictions from multiple experiment stages into a unified label prediction process, producing detailed confusion matrices and accuracy reports.
 
 ## Features
-- **Data Preprocessing:** Cleans and splits the dataset into training and test sets while ensuring stratification across obfuscation classes.
-- **Obfuscation Classification:** Implements CatBoost and ExtraTrees classifiers for detecting LLVM IR obfuscations based on IR2Vec vector embeddings.
-- **Model Evaluation:** Generates confusion matrices, classification reports, and feature importance visualizations to assess model performance.
-- **Automated Hyperparameter Tuning:** Uses Bayesian optimization for selecting optimal model parameters.
-
+- **Cascaded Experiment Generation:** Performs a global train-test split and derives six experiment datasets (Exp0–Exp5) with hierarchical filtering logic.
+- **Model Training (CatBoost & ExtraTrees):** Supports both out-of-the-box and Bayesian-optimized configurations.
+- **Per-Experiment Evaluation:** Computes confusion matrices and LaTeX classification reports for all cascaded experiments.
+- **Cascading Model Evaluation:** Performs full hierarchical classification by sequentially combining Exp1→Exp2→(Exp3|Exp4).
+- **Combined Evaluation Framework:** Merges outputs from cascaded CatBoost and ExtraTrees classifiers for holistic benchmarking.
+- **Automatic Artifact Handling:** Detects newest model/scaler artifacts from result directories.
+- **Automated Visualization:** Generates both full and chunked confusion matrices for clearer per-class analysis.
 
 ## Repository Structure
-```
 
 📂 IR2Vec_Obfuscation_Identification
-├── DATA/                    # Folder containing dataset files
-│   └──  program_vectors_done_cleaned_06032025.csv # needs to be extracted from the zip files
+
+├── DATA/
+
+│ └── program_vectors_done_cleaned_06032025.csv # Source feature dataset
+
 │
-├── Results_CatBoost_Classifier/ # Will be created by running the code
-│   ├── models/               # Saved CatBoost models and scalers
-│   ├── confusion_matrices/   # Confusion matrices (PNG, EPS formats)
-│   ├── result_txts/          # Classification reports and logs
+
+├── Experiments_Casc/
+
+│ ├── BASE/DATA/ # Global cleaned and split dataset
+
+│ ├── experiment_0/DATA/ # Exp0: All samples (Obfuscation)
+
+│ ├── experiment_1/DATA/ # Exp1: ObfBinary (Non_Obf vs Obf)
+
+│ ├── experiment_2/DATA/ # Exp2: SingleVsLayer
+
+│ ├── experiment_3/DATA/ # Exp3: SingleMethod
+
+│ ├── experiment_4/DATA/ # Exp4: LayeredLabel
+
+│ ├── experiment_5/DATA/ # Exp5: OLevel_or_NoO
+
 │
-├── Results_ExtraTrees_Classifier/ # Will be created by running the code
-│   ├── models/               # Saved ExtraTrees models and scalers
-│   ├── confusion_matrices/   # Confusion matrices (PNG, EPS formats)
-│   ├── result_txts/          # Classification reports and logs
+
+├── Results_CatBoost_Classifier/
+
+│ ├── experiment_0/…experiment_5/ # Per-experiment models, reports
+
+│ └── experiment_CASCADING/ # Combined cascading evaluation outputs
+
 │
-├── 00_train_test_split.py     # Data preprocessing and train-test split
-├── 01_CatBoost_Classification.py  # CatBoost model training and tuning
-├── 01_ExtraTreesClassification.py # ExtraTrees model training and tuning
-├── 02_evaluation_CatBoost.py  # Model evaluation for CatBoost
-├── 02_evaluation_ExtraTrees.py # Model evaluation for ExtraTrees
-├── README.md                  # Project documentation
-```
 
-## Installation and Setup
+├── Results_ExtraTrees_Classifier/
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/yourusername/Classification_LLVM_IR_Obfuscation.git
-cd Classification_LLVM_IR_Obfuscation
-```
+│ ├── experiment_0/…experiment_5/ # Per-experiment models, reports
 
-### 2. Install Dependencies
-Ensure you have Python 3.x installed, then install the required packages:
-```bash
-pip install -r requirements.txt
-```
+│ └── experiment_CASCADING/ # Combined cascading evaluation outputs
 
-Alternatively, set up a conda environment:
-```bash
-conda create --name llvm_ir_obfuscation python=3.9
-conda activate llvm_ir_obfuscation
-pip install -r requirements.txt
-```
+│
 
-## Usage
+├── 00c_cascading_experimental_setup_train_test_split.py # Global split and experiment builder
 
-### 1. Preprocessing the Dataset
-Run the data preprocessing script to clean the dataset and create train-test splits:
-```bash
-python 00_train_test_split.py
-```
+├── 01c_cascading_CatBoostClassification.py # CatBoost training across Exp0–Exp5
+
+├── 01c_cascading_ExtraTreesClassification.py # ExtraTrees training across Exp0–Exp5
+
+├── 02c_Cascading_Evaluation_CatBoost.py # Evaluate CatBoost models per experiment
+
+├── 02c_Cascading_Evaluation_ExtraTress.py # Evaluate ExtraTrees models per experiment
+
+├── 03c_CombinedModelsEvaluationCatBoost.py # Full cascading CatBoost evaluation (Exp1→Exp4)
+
+├── 03c_CombinedModelsEvalautionExtraTrees.py # Full cascading ExtraTrees evaluation (Exp1→Exp4)
+
+├── README.md # Project documentation
+
+
+## Running the Code
+
+1. Generate Cascaded Experiments
+--------------------------------
+Build all experiment datasets (Exp0–Exp5) using the global split:
+
+    python 00c_cascading_experimental_setup_train_test_split.py
+
 This script:
-- Loads the IR2Vec-based dataset
-- Renames misformatted column names
-- Removes spaces in column headers
-- Splits data into training (80%) and testing (20%) subsets with stratification
-- Outputs dataset statistics in human-readable and LaTeX formats
+- Loads and cleans the raw IR2Vec-based dataset.
+- Removes zero-vector and “Ident” samples.
+- Normalizes the Obfuscation column and harmonizes labels.
+- Performs one global stratified train-test split.
+- Creates and saves experiment-specific subsets (Exp0–Exp5) under `Experiments_Casc/`.
 
-### 2. Train Classification Models
+2. Train Classification Models
+------------------------------
 
-#### Train CatBoost Classifier:
-```bash
-python 01_CatBoost_Classification.py
-```
+Train CatBoost Models
+---------------------
+    python 01c_cascading_CatBoostClassification.py
+
 This script:
-- Trains a baseline CatBoost classifier
-- Performs Bayesian optimization for hyperparameter tuning
-- Saves the best model and scaler to `Results_CatBoost_Classifier/models/`
-- Logs accuracy scores and best hyperparameters
+- Trains CatBoost models for a specified experiment (`exp_nr = 0..5`).
+- Performs both Out-of-the-Box and Bayesian optimization phases.
+- Saves best-performing `.cbm` and `.cbm.pkl` models and their corresponding scalers.
+- Logs results and hyperparameters under `Results_CatBoost_Classifier/experiment_{exp_nr}/`.
 
-#### Train ExtraTrees Classifier:
-```bash
-python 01_ExtraTreesClassification.py
-```
+Train ExtraTrees Models
+-----------------------
+    python 01c_cascading_ExtraTreesClassification.py
+
 This script:
-- Trains a baseline ExtraTrees classifier
-- Performs Bayesian optimization for hyperparameter tuning
-- Saves the best model and scaler to `Results_ExtraTrees_Classifier/models/`
-- Logs accuracy scores and best hyperparameters
+- Trains ExtraTrees classifiers across Exp0–Exp5.
+- Performs Out-of-the-Box and Bayesian optimization using `skopt`.
+- Stores the best model and scaler in the experiment’s `models/` folder.
 
-### 3. Evaluate Trained Models
+3. Evaluate Per-Experiment Models
+---------------------------------
+Evaluate CatBoost
+-----------------
+    python 02c_Cascading_Evaluation_CatBoost.py
 
-#### Evaluate CatBoost Model:
-```bash
-python 02_evaluation_CatBoost.py
-```
-This script:
-- Loads the trained CatBoost model and scaler
-- Computes classification reports and confusion matrices
-- Saves results to `Results_CatBoost_Classifier/result_txts/`
-- Generates and saves visualization plots
+Evaluate ExtraTrees
+-------------------
+    python 02c_Cascading_Evaluation_ExtraTress.py
 
-#### Evaluate ExtraTrees Model:
-```bash
-python 02_evaluation_ExtraTrees.py
-```
-This script:
-- Loads the trained ExtraTrees model and scaler
-- Computes classification reports and confusion matrices
-- Saves results to `Results_ExtraTrees_Classifier/result_txts/`
-- Generates and saves visualization plots
+Both scripts:
+- Automatically locate the newest saved models and scalers.
+- Evaluate performance on the corresponding experiment test set.
+- Output accuracy, classification reports, and confusion matrices in PNG and EPS formats.
+- Save detailed LaTeX reports under each `result_txts/` directory.
+
+4. Perform Combined Cascading Evaluation
+----------------------------------------
+Cascading CatBoost Evaluation
+-----------------------------
+    python 03c_CombinedModelsEvaluationCatBoost.py
+
+Cascading ExtraTrees Evaluation
+-------------------------------
+    python 03c_CombinedModelsEvalautionExtraTrees.py
+
+These scripts:
+- Sequentially apply models from Exp1→Exp2→(Exp3|Exp4) to classify the Exp0 test set.
+- Automatically detect newest artifacts.
+- Merge hierarchical predictions into a final global label.
+- Generate multi-level confusion matrices (full and chunked versions).
+- Save all reports under:
+      ./Results_CatBoost_Classifier/experiment_CASCADING/
+      ./Results_ExtraTrees_Classifier/experiment_CASCADING/
+
 
 ## Requirements
 
